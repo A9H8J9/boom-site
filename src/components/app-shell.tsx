@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { tintStyle } from "@/lib/accents";
 
 const workspaceAccent = tintStyle("clay");
+const WORKSPACE_KEY = "boom_workspace_id";
 
 function Sidebar({
   open,
@@ -54,6 +55,15 @@ function Sidebar({
   const { data: memberships } = useWorkspaces();
   const { data: notifications } = useInbox();
   const [workspaceId, setWorkspaceId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setWorkspaceId(window.localStorage.getItem(WORKSPACE_KEY));
+  }, []);
+
+  const selectWorkspace = (value: string | null) => {
+    setWorkspaceId(value);
+    if (value) window.localStorage.setItem(WORKSPACE_KEY, value);
+  };
 
   const unreadCount = (notifications ?? []).filter((n) => !n.isRead).length;
   const activeMembership =
@@ -105,10 +115,24 @@ function Sidebar({
           </div>
         </div>
 
-        <div className="px-2">
+        <div className="px-2 pt-2">
+          <button
+            type="button"
+            onClick={onSearch}
+            className="flex h-8 w-full items-center gap-2 rounded-lg bg-card/70 px-2 text-[13px] text-muted-foreground ring-1 ring-border transition-colors hover:bg-card"
+          >
+            <SearchIcon className="size-4" />
+            <span>جست‌وجو در بوم…</span>
+            <span className="ms-auto rounded border border-border px-1 py-0.5 text-[10px] text-muted-foreground">
+              ⌘K
+            </span>
+          </button>
+        </div>
+
+        <div className="px-2 pt-2">
           <Select
             value={activeWorkspace?.id ?? ""}
-            onValueChange={(value) => setWorkspaceId(value ?? null)}
+            onValueChange={(value) => selectWorkspace(value ?? null)}
           >
             <SelectTrigger className="h-auto border-0 bg-transparent px-2 py-1.5 shadow-none hover:bg-sidebar-accent focus:ring-0">
               <div className="flex w-full items-center gap-2.5 text-start">
@@ -140,20 +164,6 @@ function Sidebar({
               )}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="px-2 pt-2">
-          <button
-            type="button"
-            onClick={onSearch}
-            className="flex h-8 w-full items-center gap-2 rounded-lg bg-card/70 px-2 text-[13px] text-muted-foreground ring-1 ring-border transition-colors hover:bg-card"
-          >
-            <SearchIcon className="size-4" />
-            <span>جست‌وجو در بوم…</span>
-            <span className="ms-auto rounded border border-border px-1 py-0.5 text-[10px] text-muted-foreground">
-              ⌘K
-            </span>
-          </button>
         </div>
 
         <div className="mt-4 flex-1 overflow-y-auto px-2 pb-2 thin-scrollbar">
@@ -311,6 +321,11 @@ function NotificationsPanel({ onClose }: { onClose: () => void }) {
                 >
                   {notification.title}
                 </p>
+                {notification.description && (
+                  <p className="mt-0.5 line-clamp-2 text-[10.5px] leading-4 text-muted-foreground">
+                    {notification.description}
+                  </p>
+                )}
                 <span className="text-[10px] text-muted-foreground">
                   {timeAgo(notification.createdAt)}
                 </span>

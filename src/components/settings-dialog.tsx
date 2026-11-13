@@ -21,11 +21,14 @@ import {
   UsersIcon,
   XIcon,
 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-  userApi,
+  useMe,
+  useNotificationSettings,
+  useUpdateNotificationSettings,
+  useUpdateUserSettings,
+  useUserSettings,
   type UpdateNotificationSettingsInput,
   type UserSettings,
 } from "@/lib/apis";
@@ -214,32 +217,17 @@ export function SettingsDialog({
   const [collapsedSidebar, setCollapsedSidebar] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<TitleMode>("untitled");
 
-  const queryClient = useQueryClient();
-  const { data: me } = useQuery({
-    queryKey: ["me"],
-    queryFn: userApi.me,
-    enabled: open,
-  });
-  const { data: settings } = useQuery({
-    queryKey: ["user-settings"],
-    queryFn: userApi.getSettings,
-    enabled: open,
-  });
-  const { data: notifSettings } = useQuery({
-    queryKey: ["notification-settings"],
-    queryFn: userApi.getNotificationSettings,
-    enabled: open,
-  });
+  // Each tab only asks for the data it actually shows, when it is opened.
+  const { data: me } = useMe(open && tab === "account-info");
+  const { data: settings } = useUserSettings(
+    open && tab === "personal-settings",
+  );
+  const { data: notifSettings } = useNotificationSettings(
+    open && tab === "notifications",
+  );
 
-  const saveSettings = useMutation({
-    mutationFn: userApi.updateSettings,
-    onSuccess: (data) => queryClient.setQueryData(["user-settings"], data),
-  });
-  const saveNotificationSettings = useMutation({
-    mutationFn: userApi.updateNotificationSettings,
-    onSuccess: (data) =>
-      queryClient.setQueryData(["notification-settings"], data),
-  });
+  const saveSettings = useUpdateUserSettings();
+  const saveNotificationSettings = useUpdateNotificationSettings();
 
   // Hydrate the form once the real settings arrive.
   React.useEffect(() => {

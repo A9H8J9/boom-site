@@ -233,8 +233,8 @@ export function useRegister() {
   return useMutation({ mutationFn: authApi.register });
 }
 
-export function useMe() {
-  return useQuery({ queryKey: ["me"], queryFn: userApi.me });
+export function useMe(enabled = true) {
+  return useQuery({ queryKey: ["me"], queryFn: userApi.me, enabled });
 }
 
 export function useUserSettings(enabled = true) {
@@ -286,7 +286,16 @@ export function useReadAllInbox() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: inboxApi.readAll,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["inbox"] }),
+    onSuccess: () => {
+      // Mark everything read in the cache right away, then sync with the server.
+      const readAt = new Date().toISOString();
+      queryClient.setQueryData<InboxNotification[]>(["inbox"], (items) =>
+        items?.map((item) =>
+          item.isRead ? item : { ...item, isRead: true, readAt },
+        ),
+      );
+      queryClient.invalidateQueries({ queryKey: ["inbox"] });
+    },
   });
 }
 

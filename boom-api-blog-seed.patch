@@ -1,0 +1,298 @@
+From f2e50415484d669ed7cf862b116e9697e6f0e48a Mon Sep 17 00:00:00 2001
+From: Buffy <noreply@codebuff.com>
+Date: Fri, 13 Nov 2026 05:26:54 +0000
+Subject: [PATCH] Add a seed script for blog posts
+
+---
+ package.json   |   3 +-
+ prisma/seed.ts | 264 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 266 insertions(+), 1 deletion(-)
+ create mode 100644 prisma/seed.ts
+
+diff --git a/package.json b/package.json
+index c79526c..cd41ffa 100644
+--- a/package.json
++++ b/package.json
+@@ -19,7 +19,8 @@
+     "test:watch": "vitest",
+     "test:cov": "vitest run --coverage",
+     "test:debug": "vitest --inspect-brk --no-file-parallelism",
+-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
++    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
++    "db:seed": "bun prisma/seed.ts"
+   },
+   "dependencies": {
+     "@nestjs/authentication": "^0.1.5",
+diff --git a/prisma/seed.ts b/prisma/seed.ts
+new file mode 100644
+index 0000000..55d350f
+--- /dev/null
++++ b/prisma/seed.ts
+@@ -0,0 +1,264 @@
++/**
++ * Seed script for boom-api: creates the blog posts shown on the boom-site blog page.
++ *
++ * Usage (inside the boom-api project):
++ *   1. copy this file to boom-api/prisma/seed.ts
++ *   2. add to package.json scripts:  "db:seed": "bun prisma/seed.ts"
++ *   3. bun install && bunx prisma generate && bun run db:seed
++ *
++ * Idempotent: posts are upserted by slug, so running it twice is safe.
++ */
++import 'dotenv/config';
++import { randomUUID } from 'node:crypto';
++import { PrismaMariaDb } from '@prisma/adapter-mariadb';
++import { PrismaClient } from '../generated/prisma/client.js';
++
++const url = process.env.DATABASE_URL;
++if (!url) {
++  throw new Error('DATABASE_URL is not set');
++}
++
++const prisma = new PrismaClient({ adapter: new PrismaMariaDb(url) });
++
++type Block =
++  | { type: 'heading'; text: string }
++  | { type: 'paragraph'; text: string }
++  | { type: 'list'; items: string[] };
++
++type SeedPost = {
++  title: string;
++  slug: string;
++  excerpt: string;
++  tags: string[];
++  publishedAt: string;
++  content: Block[];
++};
++
++const posts: SeedPost[] = [
++  {
++    title: 'چطور از یک بوم خالی به ایده‌ای روشن برسیم',
++    slug: 'az-boom-khali-ta-ideye-roshan',
++    excerpt:
++      'بوم خالی ترسناک نیست؛ فقط اولین قدم را باید کوتاه کرد. سه تمرین ساده که در ده دقیقه اول، ایده را از ذهن بیرون می‌آورد.',
++    tags: ['بوم', 'خلاقیت', 'شروع'],
++    publishedAt: '2026-10-02T09:00:00.000Z',
++    content: [
++      {
++        type: 'paragraph',
++        text: 'بیشتر بوم‌ها نه از کمبود ایده، بلکه از ترس شروع نیمه‌کاره می‌مانند. راه‌حل، کامل کردن فکر قبل از نوشتن نیست؛ نوشتن برای کامل شدن فکر است.',
++      },
++      { type: 'heading', text: '۱. ده کلمه، بدون فیلتر' },
++      {
++        type: 'paragraph',
++        text: 'در ده دقیقهٔ اول هر چیزی که دربارهٔ موضوع به ذهنت می‌رسد را بنویس. هیچ کلمه‌ای را حذف نکن. هدف این مرحله تولید کیفیت نیست، تولید حجم است.',
++      },
++      { type: 'heading', text: '۲. سه دسته بساز' },
++      {
++        type: 'list',
++        items: [
++          'چیزی که می‌دانم',
++          'چیزی که حدس می‌زنم',
++          'چیزی که باید بپرسم',
++        ],
++      },
++      {
++        type: 'paragraph',
++        text: 'همین سه دسته، بوم را از یک صفحهٔ سفید به یک نقشهٔ کار تبدیل می‌کند. بعداً هر یادداشت تازه را کنار یکی از این سه می‌گذاری.',
++      },
++      { type: 'heading', text: '۳. یک قدم کوچک انتخاب کن' },
++      {
++        type: 'paragraph',
++        text: 'بوم بدون اقدام، دفترچهٔ خاطرات است. آخرین کار هر جلسه این است که فقط یک کار کوچک و مشخص برای فردا انتخاب شود.',
++      },
++    ],
++  },
++  {
++    title: 'سه عادتی که تیم‌های دورکار را هماهنگ نگه می‌دارد',
++    slug: 'se-adat-timhaye-dorkar',
++    excerpt:
++      'هماهنگی از جلسه‌های بیشتر نمی‌آید، از نوشتن بیشتر می‌آید. عادت‌هایی که در بوم، تیم را بدون تماس روزانه هم‌سو نگه می‌دارد.',
++    tags: ['تیم', 'دورکاری', 'بهره‌وری'],
++    publishedAt: '2026-10-14T07:30:00.000Z',
++    content: [
++      {
++        type: 'paragraph',
++        text: 'در تیم دورکار، حافظهٔ جمعی به‌اندازهٔ کیفیت نوشتن اعضایش خوب است. سه عادت زیر بیشترین اثر را در تیم‌هایی داشته که با بوم کار می‌کنند.',
++      },
++      { type: 'heading', text: 'یک تصمیم، یک یادداشت' },
++      {
++        type: 'paragraph',
++        text: 'هر تصمیمی که در چت یا تماس گرفته می‌شود، همان روز در بوم ثبت شود: چه تصمیمی، چرا، و چه کسی مسئول اجراست.',
++      },
++      { type: 'heading', text: 'بوم هر پروژه، تک‌مرجع حقیقت' },
++      {
++        type: 'paragraph',
++        text: 'وقتی فایل و لینک در پنج جا پخش باشد، هر کس نسخهٔ خودش را باور می‌کند. یک بوم برای هر پروژه کافی است؛ بقیهٔ جاها فقط به آن لینک می‌دهند.',
++      },
++      { type: 'heading', text: 'بازبینی هفتگی، پانزده دقیقه' },
++      {
++        type: 'list',
++        items: [
++          'چه چیزی این هفته پیش رفت؟',
++          'کجا گیر کردیم؟',
++          'هفتهٔ بعد فقط روی چه چیزی تمرکز می‌کنیم؟',
++        ],
++      },
++      {
++        type: 'paragraph',
++        text: 'همین سه پرسش، در پانزده دقیقه، بیشتر از یک جلسهٔ یک‌ساعتهٔ بی‌دستور جواب می‌دهد.',
++      },
++    ],
++  },
++  {
++    title: 'قالب آماده؛ وقتی نمی‌خواهی از صفر شروع کنی',
++    slug: 'ghaleb-amade-shoroo',
++    excerpt:
++      'ساختن از صفر همیشه نشانهٔ خلاقیت نیست. گاهی بهترین کار، انتخاب یک قالب خوب و تغییر دادنش تا وقتی شبیه خودت شود.',
++    tags: ['قالب', 'بوم', 'راهنما'],
++    publishedAt: '2026-10-25T11:15:00.000Z',
++    content: [
++      {
++        type: 'paragraph',
++        text: 'قالب‌ها تصمیم‌های تکراری را از دوش تو برمی‌دارند: چیدمان، دسته‌بندی، و ترتیب مراحلی که هزار بار قبل انجام شده‌اند.',
++      },
++      { type: 'heading', text: 'قالب را نفهمیده استفاده نکن' },
++      {
++        type: 'paragraph',
++        text: 'قبل از شروع، یک دقیقه به ساختار قالب نگاه کن و بپرس هر بخش چه تصمیمی می‌گیرد. بخشی که تصمیمی نمی‌گیرد را حذف کن.',
++      },
++      { type: 'heading', text: 'سه قالب پرکاربرد' },
++      {
++        type: 'list',
++        items: [
++          'بریف پروژه: مسئله، مخاطب، معیار موفقیت',
++          'دفترچهٔ جلسه: تصمیم‌ها، وظیفه‌ها، پرسش‌های باز',
++          'نقشهٔ راه: مراحل، وابستگی‌ها، تاریخ‌های تقریبی',
++        ],
++      },
++      {
++        type: 'paragraph',
++        text: 'هر قالب بعد از دو سه بار استفاده، شکل واقعی کار تیم را نشان می‌دهد. آن‌وقت وقت تغییر دادنش است، نه قبلش.',
++      },
++    ],
++  },
++  {
++    title: 'دفترچهٔ جلسه؛ جلسه‌ای که به تصمیم می‌رسد',
++    slug: 'daftarche-jalase-tasfim',
++    excerpt:
++      'اگر بعد از جلسه یادت نمی‌آید چه قرار شد، مشکل از حافظه نیست؛ از نبود یک ساختار ساده برای ثبت تصمیم‌هاست.',
++    tags: ['جلسه', 'تیم', 'سازمان‌دهی'],
++    publishedAt: '2026-11-03T08:45:00.000Z',
++    content: [
++      {
++        type: 'paragraph',
++        text: 'دفترچهٔ جلسه فهرست حرف‌ها نیست؛ فهرست نتیجه‌هاست. تفاوت این دو، همان چیزی است که جلسه را از گفت‌وگو جدا می‌کند.',
++      },
++      { type: 'heading', text: 'قبل از جلسه' },
++      {
++        type: 'list',
++        items: [
++          'یک جمله: هدف این جلسه چیست؟',
++          'چه کسی باید تصمیم بگیرد؟',
++          'چه چیزی باید قبل از شروع خوانده شود؟',
++        ],
++      },
++      { type: 'heading', text: 'در جلسه' },
++      {
++        type: 'paragraph',
++        text: 'هر تصمیم را با نام مسئول و تاریخ بررسی کنارش بنویس. اگر مسئولی ندارد، تصمیم نیست؛ آرزوست.',
++      },
++      { type: 'heading', text: 'بعد از جلسه' },
++      {
++        type: 'paragraph',
++        text: 'یادداشت را در همان بوم تیم بگذار و یک پیام کوتاه با لینکش بفرست. یادداشتی که پیدا نمی‌شود، نوشته نشده است.',
++      },
++    ],
++  },
++  {
++    title: 'هوش مصنوعی در بوم؛ دستیار، نه جایگزین',
++    slug: 'hoosh-masnooei-dastiar',
++    excerpt:
++      'دستیار هوش مصنوعی بوم برای جمع‌بندی، پیشنهاد و مرتب کردن ساخته شده؛ تصمیم نهایی و لحن کار همیشه مال توست.',
++    tags: ['هوش مصنوعی', 'محصول', 'بوم'],
++    publishedAt: '2026-11-10T12:00:00.000Z',
++    content: [
++      {
++        type: 'paragraph',
++        text: 'هر ابزاری که فکر کردن را آسان‌تر نشان دهد و سخت‌تر کند، ابزار خوبی نیست. دستیار بوم با همین قاعده ساخته شده است.',
++      },
++      { type: 'heading', text: 'کجا کمک می‌گیریم' },
++      {
++        type: 'list',
++        items: [
++          'خلاصه کردن یادداشت‌های پراکنده',
++          'پیشنهاد عنوان و دسته‌بندی',
++          'تبدیل فهرست خام به مراحل قابل اجرا',
++        ],
++      },
++      { type: 'heading', text: 'کجا تصمیم با ماست' },
++      {
++        type: 'paragraph',
++        text: 'اولویت‌ها، لحن برند و هر چیزی که به آدم‌ها مربوط است، از دستیار پرسیده نمی‌شود. پیشنهاد را می‌گیریم، انتخاب را خودمان می‌کنیم.',
++      },
++    ],
++  },
++];
++
++async function main() {
++  const author =
++    (await prisma.user.findFirst({ orderBy: { createdAt: 'asc' } })) ??
++    (await prisma.user.create({
++      data: {
++        name: 'تیم بوم',
++        email: 'blog@boom.studio',
++        password: randomUUID(),
++      },
++    }));
++
++  for (const post of posts) {
++    const data = {
++      title: post.title,
++      excerpt: post.excerpt,
++      content: post.content,
++      publishedAt: new Date(post.publishedAt),
++      authorId: author.id,
++    };
++
++    await prisma.blog.upsert({
++      where: { slug: post.slug },
++      create: {
++        ...data,
++        slug: post.slug,
++        tags: {
++          connectOrCreate: post.tags.map((name) => ({
++            where: { name },
++            create: { name },
++          })),
++        },
++      },
++      update: {
++        ...data,
++        tags: {
++          set: [],
++          connectOrCreate: post.tags.map((name) => ({
++            where: { name },
++            create: { name },
++          })),
++        },
++      },
++    });
++
++    console.log(`✓ ${post.slug}`);
++  }
++
++  console.log(`\n${posts.length} blog posts are ready.`);
++}
++
++main()
++  .catch((error) => {
++    console.error(error);
++    process.exitCode = 1;
++  })
++  .finally(async () => {
++    await prisma.$disconnect();
++  });
+-- 
+2.43.0
+
